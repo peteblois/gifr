@@ -28,6 +28,9 @@ include		$(dir)/Rules.mk
 %_x86_32.nexe: $(OBJECTS_32)
 	$(LINK_32)
 
+%_x86_64.nexe: $(OBJECTS_64)
+	$(LINK_64)
+
 
 # The variables TGT_*, CLEAN and CMD_INST* may be added to by the Makefile
 # fragments in the various subdirectories.

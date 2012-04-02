@@ -4,17 +4,21 @@ import os
 import subprocess
 import sys
 
-nacl_root = '/Users/pete/Code/nacl/'
-nacl_ports_root = os.path.join(nacl_root, 'naclports')
+gifr_root = os.path.dirname(os.path.realpath(__file__))
+nacl_root = os.path.join(gifr_root, 'nacl')
+nacl_sdk_root = os.path.join(nacl_root, 'nacl_sdk', 'pepper_18')
+nacl_ports_root = os.path.join(nacl_root, 'naclports', 'src')
 
 def main():
-  os.putenv('NACL_SDK_ROOT', '/Users/pete/Code/nacl/nacl_sdk/pepper_18/')
+  os.putenv('NACL_SDK_ROOT', nacl_sdk_root)
 
   if (len(sys.argv) > 1):
     if (sys.argv[1] == 'chrome'):
       start_chrome()
     if (sys.argv[1] == 'nacl_ports'):
-      nacl_ports();
+      nacl_ports()
+    if (sys.argv[1] == 'clean'):
+      clean()
 
 
 def start_chrome():
@@ -32,7 +36,7 @@ def nacl_ports():
   install_nacl_port('libpng-1.2.40')
 
 def install_nacl_port(name):
-  install_dir = os.path.join(nacl_ports_root, 'src', 'libraries', name)
+  install_dir = os.path.join(nacl_ports_root, 'libraries', name)
   os.chdir(install_dir)
 
   sh = os.path.join(install_dir, 'nacl-%s.sh' % name)
@@ -41,6 +45,10 @@ def install_nacl_port(name):
 
   os.putenv('NACL_PACKAGES_BITSIZE', '64');
   subprocess.call([sh])
+
+def clean():
+  os.chdir(nacl_ports_root)
+  subprocess.call(['make', 'clean'])
 
 if __name__ == "__main__":
   main()

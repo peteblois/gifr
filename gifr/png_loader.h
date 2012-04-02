@@ -8,6 +8,7 @@
 #include <png.h>
 #include <string.h>
 
+#include "boost/function.hpp"
 #include "boost/scoped_array.hpp"
 #include "ppapi/cpp/size.h"
 #include "threading/thread_condition.h"
@@ -20,13 +21,16 @@ namespace gifr {
 // pixel buffer.
 class PngLoader : public url_io::WebResourceLoader::Delegate {
  public:
+  typedef boost::function<void (PngLoader*)> CompletionCallback;
+
   PngLoader()
       : content_length_(0),
         url_bytes_read_(0),
         is_valid_(false),
         png_data_pos_(0),
         png_ptr_(NULL),
-        png_info_ptr_(NULL) {}
+        png_info_ptr_(NULL),
+        completion_callback_(NULL) {}
   ~PngLoader();
 
   // WebResourceLoader::Delegate interface.
@@ -53,6 +57,10 @@ class PngLoader : public url_io::WebResourceLoader::Delegate {
   // The size in pixels of the final, decompressed pixel buffer.
   const pp::Size& png_image_size() const {
     return png_image_size_;
+  }
+
+  void set_completion_callback(CompletionCallback callback) {
+    completion_callback_ = callback;
   }
 
  private:
@@ -83,6 +91,7 @@ class PngLoader : public url_io::WebResourceLoader::Delegate {
   png_structp png_ptr_;  // The main PNG structure maintained by libpng.
   png_infop png_info_ptr_;
   pp::Size png_image_size_;
+  CompletionCallback completion_callback_;
 };
 
 }  // namespace gifr
