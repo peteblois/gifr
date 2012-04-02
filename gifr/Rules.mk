@@ -24,15 +24,7 @@ TARGETS_64:= $(TARGETS_64) $(TARGETS_64_$(d))
 
 LIBS:= $(LIBS) $(addprefix -l,$(LIBS_$(d)))
 
-DEPS_$(d) := $(OBJS_$(d):%=%.d)
-
 CLEAN   := $(CLEAN) $(OBJS_32_$(d)) $(OBJS_64_$(d)) $(TARGETS_32_$(d)) $(TARGETS_64_$(d))
-
-# Local rules
-
-$(OBJS_$(d)): CF_TGT := -I$(d)
-
--include  $(DEPS_$(d))
 
 d := $(dirstack_$(sp))
 sp := $(basename $(sp))
