@@ -1,0 +1,31 @@
+THIS_MAKEFILE:=$(abspath $(lastword $(MAKEFILE_LIST)))
+PROJECT_ROOT:=$(abspath $(dir $(THIS_MAKEFILE)))
+BUILD_PATH:=$(abspath $(PROJECT_ROOT)/build)
+NACL_SDK_ROOT?=$(abspath $(PROJECT_ROOT)/../nacl_sdk/pepper_18)
+
+WARNINGS:=-Wno-long-long -Wall -Wswitch-enum -Werror -pedantic
+CXXFLAGS:=-pthread -O0 $(WARNINGS) $(INCLUDES)
+LDFLAGS:=-lppapi_cpp -lppapi
+
+#
+# Compute path to compiler
+#
+OSNAME:=$(shell python $(NACL_SDK_ROOT)/tools/getos.py)
+TC_PATH:=$(abspath $(NACL_SDK_ROOT)/toolchain/$(OSNAME)_x86_newlib)
+
+
+# Alias for C compiler
+CXX:=$(TC_PATH)/bin/i686-nacl-g++
+
+SOURCES:= $(shell find $(PROJECT_ROOT) -name '*.cc')
+
+all: $(OBJECTS)
+	echo $(OBJECTS)
+
+OBJECTS:= $(addprefix $(BUILD_PATH)/,$(SOURCES:%.cc=%_32.o))
+
+OBJECTS_32:= \
+	$(patsubst %.cc,$(BUILD_PATH)/%_32.o,url_io/$(wildcard *.cc))
+
+$(BUILD_PATH)/%_32.o: %.cc $(BUILD_PATH)
+	$(CXX) -o$ $@ -c $< -m32 -O0 -g $(CXXFLAGS)
