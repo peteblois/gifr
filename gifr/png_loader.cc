@@ -151,6 +151,10 @@ void PngLoader::OnLoaderCompletedDownload(WebResourceLoader* loader) {
     png_set_tRNS_to_alpha(png_ptr_);
   // Change RGBA -> ARGB.
   // png_set_swap_alpha(png_ptr_);
+
+  if (completion_callback_) {
+    completion_callback_(this);
+  }
 }
 
 void PngLoader::OnLoaderError(int32_t error, WebResourceLoader* loader) {
@@ -164,6 +168,9 @@ void PngLoader::OnLoaderDone(WebResourceLoader* loader) {
 void PngLoader::FillPixelBuffer(uint32_t* pixel_buffer) {
   if (!is_valid())
     return;
+  if (png_info_ptr_->channels != 3 && png_info_ptr_->channels != 4)
+    return;
+
   png_bytep* row_pointers = new png_bytep[png_image_size_.height()];
   size_t row_bytes = png_get_rowbytes(png_ptr_, png_info_ptr_);
   for (int32_t row = 0; row < png_image_size_.height(); ++row) {
@@ -171,14 +178,44 @@ void PngLoader::FillPixelBuffer(uint32_t* pixel_buffer) {
   }
   png_read_image(png_ptr_, row_pointers);
   png_read_end(png_ptr_, png_info_ptr_);
+
+  bool has_alpha = png_info_ptr_->channels == 4;
+
   // Copy the PNG data into the given buffer.
-  for (int32_t row = 0; row < png_image_size_.height(); ++row) {
-    memcpy(pixel_buffer, row_pointers[row], row_bytes);
-    PreMultiplyAlpha(pixel_buffer, png_image_size_.width());
-    pixel_buffer += png_image_size_.width();
-    png_free(png_ptr_, row_pointers[row]);
+  if (has_alpha) {
+    for (int32_t row = 0; row < png_image_size_.height(); ++row) {
+      memcpy(pixel_buffer, row_pointers[row], row_bytes);
+      PreMultiplyAlpha(pixel_buffer, png_image_size_.width());
+      pixel_buffer += png_image_size_.width();
+      png_free(png_ptr_, row_pointers[row]);
+    }
+  } else {
+    for (int32_t row = 0; row < png_image_size_.height(); ++row) {
+      png_bytep row_ptr = row_pointers[row];
+      for (int32_t col = 0; col < png_image_size_.width(); ++col) {
+        *pixel_buffer = *row_ptr | *(row_ptr + 1) << 8 | *(row_ptr + 2) << 16 | 0xFF << kAlphaShift;
+        row_ptr += 3;
+        ++pixel_buffer;
+      }
+      png_free(png_ptr_, row_pointers[row]);
+    }
   }
   delete[] row_pointers;
+  // png_bytep* row_pointers = new png_bytep[png_image_size_.height()];
+  // size_t row_bytes = png_get_rowbytes(png_ptr_, png_info_ptr_);
+  // for (int32_t row = 0; row < png_image_size_.height(); ++row) {
+  //   row_pointers[row] = static_cast<png_bytep>(png_malloc(png_ptr_, row_bytes));
+  // }
+  // png_read_image(png_ptr_, row_pointers);
+  // png_read_end(png_ptr_, png_info_ptr_);
+  // // Copy the PNG data into the given buffer.
+  // for (int32_t row = 0; row < png_image_size_.height(); ++row) {
+  //   memcpy(pixel_buffer, row_pointers[row], row_bytes);
+  //   PreMultiplyAlpha(pixel_buffer, png_image_size_.width());
+  //   pixel_buffer += png_image_size_.width();
+  //   png_free(png_ptr_, row_pointers[row]);
+  // }
+  // delete[] row_pointers;
 }
 
 void PngLoader::PreMultiplyAlpha(uint32_t* scanline, int32_t line_width) {

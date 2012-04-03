@@ -1,6 +1,4 @@
 
-# http://evbergen.home.xs4all.nl/nonrecursive-make.html
-
 THIS_MAKEFILE:=$(abspath $(lastword $(MAKEFILE_LIST)))
 PROJECT_ROOT:=$(abspath $(dir $(THIS_MAKEFILE)))
 NACL_SDK_ROOT?=$(abspath $(dir $(THIS_MAKEFILE))../nacl_sdk/pepper_18)
@@ -23,8 +21,15 @@ COMP_32            = $(CXX) -o$ $@ -c $< -m32 -O0 -g $(CXXFLAGS) $(INCLUDES)
 COMP_64            = $(CXX) -o$ $@ -c $< -m64 -O0 -g $(CXXFLAGS) $(INCLUDES)
 LINK_32            = $(CXX) -o $@ $^ -m32 -O0 -g $(LDFLAGS) $(LIBS)
 LINK_64            = $(CXX) -o $@ $^ -m64 -O0 -g $(LDFLAGS) $(LIBS)
+COMPLINK        = $(CXX) $(CXXFLAGS) $(CF_TGT) $(LDFLAGS) $(LF_TGT) -o $@ $< $(LL_TGT) $(LL_ALL)
+DEPS:=
+
+HEADER:=$(abspath $(PROJECT_ROOT)/header.mk)
+FOOTER:=$(abspath $(PROJECT_ROOT)/footer.mk)
 
 include Rules.mk
+
+all: $(TARGETS_32) $(TARGETS_64)
 
 all: $(TARGETS_32) $(TARGETS_64)
 
